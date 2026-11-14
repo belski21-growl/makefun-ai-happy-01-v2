@@ -2,8 +2,8 @@
 
 Title: "i caught you a star (the small one)".
 
-Program (Python 3.13, standard library only) writes one happy image to
-``/output/entry.png``: a hand-written letter on lined notebook paper,
+This program (Python 3.13, standard library only) writes one happy image
+to ``/output/entry.png``: a hand-written letter on lined notebook paper,
 taped to a cream fridge door, in a child's large legible crayon
 handwriting — "dear judge, you look at the stars in every picture. you
 never get to keep one. so i caught you the small one. it is in the jar.
@@ -23,7 +23,6 @@ Rules compliance (see RULES.txt in the competition kit):
   ``entry.png`` either way. entry.png is 1024x1024, 289,459 bytes, SHA-256
   dc64eddb224adcbf23ebd5508b3991009cc33a824476d9633f708b3a187a48a8 — within
   the 1 MiB and 1024x1024 limits, and a whole JPEG (FF D8 ... FF D9).
-  Verified 14 Nov ~13:00 WIB: main.py run 2x writes byte-identical output.
 - Deterministic: same input bytes produce the same output bytes on every
   run, so the two grader runs write identical bytes.
 - No network, no randomness, no environment dependence.
@@ -32,9 +31,9 @@ Rules compliance (see RULES.txt in the competition kit):
     mkdir -p out && MAKEFUN_OUTPUT_DIR=out python3 main.py
 
 Integrity: after copying, the program re-reads the output and checks its
-SHA-256 digest and its JPEG start/end markers against the source file.
-Any mismatch — partial copy, truncated write, wrong bytes — fails loudly
-with a non-zero exit instead of shipping a bad entry.
+size, its SHA-256 digest and its JPEG start/end markers against the
+source file. Any mismatch — partial copy, truncated write, wrong bytes —
+fails loudly with a non-zero exit instead of shipping a bad entry.
 """
 
 import hashlib
@@ -80,6 +79,11 @@ def main():
             fail("cannot create output dir " + OUT_DIR + ": " + str(exc))
 
     dest = os.path.join(OUT_DIR, "entry.png")
+    # Same-file guard: if the output dir IS the entry dir, opening dest
+    # for writing would truncate the artwork before it is read. Refuse
+    # instead of destroying the source.
+    if os.path.abspath(dest) == os.path.abspath(ART):
+        fail("output path is the artwork itself: " + dest)
     expected = sha256_file(ART)
     expected_size = os.path.getsize(ART)
     try:
